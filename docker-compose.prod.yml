@@ -10,7 +10,7 @@ services:
   # 1. Suchak Core Web Application (Inertia v2 + Svelte 5 + Nginx + PHP 8.4-FPM)
   # ============================================================================
   app:
-    image: ghcr.io/jaikhlang/suchak-app:${IMAGE_TAG:-latest}
+    image: ghcr.io/jaikhlang/suchak/suchak-app:${IMAGE_TAG:-latest}
     container_name: suchak_app
     restart: always
     ports:
@@ -58,7 +58,7 @@ services:
   # 2. Suchak Queue Worker
   # ============================================================================
   queue-worker:
-    image: ghcr.io/jaikhlang/suchak-app:${IMAGE_TAG:-latest}
+    image: ghcr.io/jaikhlang/suchak/suchak-app:${IMAGE_TAG:-latest}
     container_name: suchak_worker
     restart: always
     environment:
@@ -94,7 +94,7 @@ services:
   # 3. Suchak Task Scheduler (Cron daemon)
   # ============================================================================
   scheduler:
-    image: ghcr.io/jaikhlang/suchak-app:${IMAGE_TAG:-latest}
+    image: ghcr.io/jaikhlang/suchak/suchak-app:${IMAGE_TAG:-latest}
     container_name: suchak_scheduler
     restart: always
     environment:
@@ -120,7 +120,7 @@ services:
   # 4. Suchak Python Ingestion & OCR Sidecar (FastAPI + Docling + PaddleOCR)
   # ============================================================================
   ingestion-worker:
-    image: ghcr.io/jaikhlang/suchak-ingestion-worker:${IMAGE_TAG:-latest}
+    image: ghcr.io/jaikhlang/suchak/suchak-ingestion-worker:${IMAGE_TAG:-latest}
     container_name: suchak_ingestion
     restart: always
     environment:
