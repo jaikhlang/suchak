@@ -13,6 +13,7 @@ COPY vite.config.js* vite.config.ts* svelte.config.js* tsconfig.json* tailwind.c
 COPY resources ./resources
 
 # Compile production bundles to public/build
+ENV SKIP_WAYFINDER=1
 RUN npm run build
 
 # ==============================================================================

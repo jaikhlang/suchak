@@ -5,6 +5,19 @@ import tailwindcss from '@tailwindcss/vite';
 import laravel from 'laravel-vite-plugin';
 import { bunny } from 'laravel-vite-plugin/fonts';
 import { defineConfig, lazyPlugins } from 'vite-plus';
+import { execSync } from 'node:child_process';
+
+const hasPhp = (() => {
+    try {
+        execSync(process.platform === 'win32' ? 'where php' : 'which php', { stdio: 'ignore' });
+        return true;
+    } catch {
+        return false;
+    }
+})();
+
+const skipWayfinder = Boolean(process.env.SKIP_WAYFINDER) || !hasPhp;
+const wayfinderCommand = process.env.WAYFINDER_COMMAND ?? (skipWayfinder ? (process.platform === 'win32' ? 'cmd /c exit 0' : 'true') : 'php artisan wayfinder:generate');
 
 const isSvelteCheck = process.argv.some((argument) =>
     argument.includes('svelte-check'),
@@ -30,6 +43,7 @@ export default defineConfig({
         svelte(),
         wayfinder({
             formVariants: true,
+            command: wayfinderCommand,
         }),
     ]),
     server: {

@@ -1,0 +1,17 @@
+node_modules
+vendor
+public/build
+public/hot
+public/storage
+.git
+.github
+.agents
+.ai
+.contexts
+.env
+.env.*
+.phpunit.cache
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
