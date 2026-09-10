@@ -52,6 +52,7 @@ RUN apk add --no-cache \
     git \
     libpq \
     libpq-dev \
+    libzip \
     libzip-dev \
     icu-dev \
     icu-libs \

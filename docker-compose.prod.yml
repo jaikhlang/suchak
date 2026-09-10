@@ -12,7 +12,7 @@ services:
     container_name: suchak_prod_app
     restart: always
     ports:
-      - "${HTTP_PORT:-80}:80"
+      - "${HTTP_PORT:-8002}:80"
     environment:
       CONTAINER_ROLE: web
       AUTO_MIGRATE: "true"
