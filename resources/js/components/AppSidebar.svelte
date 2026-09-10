@@ -1,8 +1,13 @@
 <script lang="ts">
     import { Link } from '@inertiajs/svelte';
     import BookOpen from '@lucide/svelte/icons/book-open';
+    import Building2 from '@lucide/svelte/icons/building-2';
+    import FileText from '@lucide/svelte/icons/file-text';
     import FolderGit2 from '@lucide/svelte/icons/folder-git-2';
+    import Globe from '@lucide/svelte/icons/globe';
     import LayoutGrid from '@lucide/svelte/icons/layout-grid';
+    import MapPin from '@lucide/svelte/icons/map-pin';
+    import ShieldCheck from '@lucide/svelte/icons/shield-check';
     import type { Snippet } from 'svelte';
     import AppLogo from '@/components/AppLogo.svelte';
     import NavFooter from '@/components/NavFooter.svelte';
@@ -32,6 +37,31 @@
             title: 'Dashboard',
             href: dashboard(),
             icon: LayoutGrid,
+        },
+        {
+            title: 'Moderation Queue',
+            href: '/admin/moderation',
+            icon: ShieldCheck,
+        },
+        {
+            title: 'Notices & Corrigenda',
+            href: '/admin/notices',
+            icon: FileText,
+        },
+        {
+            title: 'Sources & Crawlers',
+            href: '/admin/sources',
+            icon: Globe,
+        },
+        {
+            title: 'Institutions',
+            href: '/admin/institutions',
+            icon: Building2,
+        },
+        {
+            title: 'States & UTs',
+            href: '/admin/states',
+            icon: MapPin,
         },
     ];
 

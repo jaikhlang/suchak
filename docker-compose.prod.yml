@@ -1,0 +1,167 @@
+# ==============================================================================
+# Suchak (सूचक) — Production Docker Compose (Using Images from ghcr.io)
+# ==============================================================================
+# Usage:
+# docker compose -f docker-compose.prod.yml up -d
+# ==============================================================================
+
+services:
+  # 1. Production Web App (Nginx + PHP 8.4-FPM)
+  app:
+    image: ghcr.io/${GHCR_REPO_OWNER:-your-org}/suchak-app:${IMAGE_TAG:-latest}
+    container_name: suchak_prod_app
+    restart: always
+    ports:
+      - "${HTTP_PORT:-80}:80"
+    environment:
+      CONTAINER_ROLE: web
+      AUTO_MIGRATE: "true"
+      APP_NAME: "Suchak"
+      APP_ENV: production
+      APP_KEY: ${APP_KEY}
+      APP_DEBUG: "false"
+      APP_URL: ${APP_URL}
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE:-suchak_db}
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD}
+      QUEUE_CONNECTION: redis
+      CACHE_STORE: redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      FILESYSTEM_DISK: s3
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-ap-south-1}
+      AWS_BUCKET: ${AWS_BUCKET:-suchak-artifacts}
+      INGESTION_WORKER_URL: http://ingestion-worker:8001
+      INGESTION_WORKER_API_KEY: ${INGESTION_WORKER_API_KEY}
+      N8N_WEBHOOK_URL: ${N8N_WEBHOOK_URL}
+      N8N_WEBHOOK_SECRET: ${N8N_WEBHOOK_SECRET}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ingestion-worker:
+        condition: service_healthy
+    networks:
+      - suchak-prod-net
+
+  # 2. Production Queue Worker
+  queue-worker:
+    image: ghcr.io/${GHCR_REPO_OWNER:-your-org}/suchak-app:${IMAGE_TAG:-latest}
+    container_name: suchak_prod_worker
+    restart: always
+    environment:
+      CONTAINER_ROLE: worker
+      APP_NAME: "Suchak"
+      APP_ENV: production
+      APP_KEY: ${APP_KEY}
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE:-suchak_db}
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD}
+      QUEUE_CONNECTION: redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      FILESYSTEM_DISK: s3
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_BUCKET: ${AWS_BUCKET:-suchak-artifacts}
+      INGESTION_WORKER_URL: http://ingestion-worker:8001
+      INGESTION_WORKER_API_KEY: ${INGESTION_WORKER_API_KEY}
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - suchak-prod-net
+
+  # 3. Production Task Scheduler
+  scheduler:
+    image: ghcr.io/${GHCR_REPO_OWNER:-your-org}/suchak-app:${IMAGE_TAG:-latest}
+    container_name: suchak_prod_scheduler
+    restart: always
+    environment:
+      CONTAINER_ROLE: scheduler
+      APP_NAME: "Suchak"
+      APP_ENV: production
+      APP_KEY: ${APP_KEY}
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE:-suchak_db}
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      app:
+        condition: service_started
+    networks:
+      - suchak-prod-net
+
+  # 4. Production Python Ingestion Sidecar
+  ingestion-worker:
+    image: ghcr.io/${GHCR_REPO_OWNER:-your-org}/suchak-ingestion-worker:${IMAGE_TAG:-latest}
+    container_name: suchak_prod_ingestion
+    restart: always
+    environment:
+      PORT: 8001
+      WORKERS: 4
+      API_KEY: ${INGESTION_WORKER_API_KEY}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-ap-south-1}
+      AWS_BUCKET: ${AWS_BUCKET:-suchak-artifacts}
+    networks:
+      - suchak-prod-net
+
+  # 5. Production PostgreSQL 17
+  postgres:
+    image: postgres:17-alpine
+    container_name: suchak_prod_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-suchak_db}
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - suchak_prod_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres} -d ${DB_DATABASE:-suchak_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - suchak-prod-net
+
+  # 6. Production Redis 7.4
+  redis:
+    image: redis:7.4-alpine
+    container_name: suchak_prod_redis
+    restart: always
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-supersecretredispass}
+    volumes:
+      - suchak_prod_redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-supersecretredispass}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - suchak-prod-net
+
+volumes:
+  suchak_prod_pgdata:
+    driver: local
+  suchak_prod_redisdata:
+    driver: local
+
+networks:
+  suchak-prod-net:
+    driver: bridge
