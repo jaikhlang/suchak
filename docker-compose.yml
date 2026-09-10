@@ -24,7 +24,7 @@ services:
     container_name: suchak_app
     restart: unless-stopped
     ports:
-      - "${APP_PORT:-8000}:80"
+      - "${APP_PORT:-8002}:80"
     environment:
       CONTAINER_ROLE: web
       AUTO_MIGRATE: "true"
@@ -32,7 +32,7 @@ services:
       APP_ENV: ${APP_ENV:-local}
       APP_KEY: ${APP_KEY}
       APP_DEBUG: ${APP_DEBUG:-true}
-      APP_URL: ${APP_URL:-http://localhost:8000}
+      APP_URL: ${APP_URL:-http://localhost:8002}
       DB_CONNECTION: pgsql
       DB_HOST: postgres
       DB_PORT: 5432
