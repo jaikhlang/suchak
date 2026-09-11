@@ -8,8 +8,9 @@ echo "Starting container with role: ${ROLE}..."
 # Cache configuration, routes, and views if in production
 if [ "${APP_ENV}" = "production" ]; then
     echo "Caching Laravel configuration and routes..."
-    php artisan optimize:clear || true
-    php artisan optimize || true
+    php artisan config:cache || true
+    php artisan route:cache || true
+    php artisan view:cache || true
 fi
 
 if [ "$ROLE" = "web" ]; then
