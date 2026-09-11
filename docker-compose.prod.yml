@@ -59,7 +59,7 @@ services:
         max-file: "3"
 
   # ---------------------------------------------------------------------------
-# 2. Suchak Queue Worker
+  # 2. Suchak Queue Worker
   # ---------------------------------------------------------------------------
   queue-worker:
     image: 'ghcr.io/jaikhlang/suchak/suchak-app:${IMAGE_TAG:-latest}'
@@ -102,7 +102,7 @@ services:
     logging: *default_logging
 
   # ---------------------------------------------------------------------------
- # 3. Suchak Task Scheduler (Cron daemon)
+  # 3. Suchak Task Scheduler (Cron daemon)
   # ---------------------------------------------------------------------------
   scheduler:
     image: 'ghcr.io/jaikhlang/suchak/suchak-app:${IMAGE_TAG:-latest}'
@@ -153,7 +153,7 @@ services:
       AWS_ENDPOINT: '${AWS_ENDPOINT:?AWS_ENDPOINT is required}'
       AWS_ENDPOINT_URL: '${AWS_ENDPOINT:?AWS_ENDPOINT is required}'
     healthcheck:
-      test: ['CMD-SHELL', 'wget -qO- http://localhost:8001/health || exit 1']
+      test: [ 'CMD-SHELL', 'curl -fsS http://localhost:8001/health || exit 1' ]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -175,7 +175,7 @@ services:
     volumes:
       - 'suchak_pgdata:/var/lib/postgresql/data'
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${DB_USERNAME:-postgres} -d ${DB_DATABASE:-suchak_db}']
+      test: [ 'CMD-SHELL', 'pg_isready -U ${DB_USERNAME:-postgres} -d ${DB_DATABASE:-suchak_db}' ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -199,7 +199,7 @@ services:
     volumes:
       - 'suchak_redisdata:/data'
     healthcheck:
-      test: ['CMD-SHELL', 'redis-cli -a "$$REDIS_PASSWORD" ping | grep -q PONG']
+      test: [ 'CMD-SHELL', 'redis-cli -a "$$REDIS_PASSWORD" ping | grep -q PONG' ]
       interval: 10s
       timeout: 5s
       retries: 5
