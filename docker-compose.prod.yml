@@ -6,44 +6,45 @@
 # ==============================================================================
 
 services:
-  # ============================================================================
+  # ---------------------------------------------------------------------------
   # 1. Suchak Core Web Application (Inertia v2 + Svelte 5 + Nginx + PHP 8.4-FPM)
-  # ============================================================================
+  # ---------------------------------------------------------------------------
   app:
-    image: ghcr.io/jaikhlang/suchak/suchak-app:${IMAGE_TAG:-latest}
+    image: 'ghcr.io/jaikhlang/suchak/suchak-app:${IMAGE_TAG:-latest}'
     container_name: suchak_app
     restart: always
     ports:
-      - "${HTTP_PORT:-8002}:80"
+      - '${HTTP_PORT:-8002}:80'
     environment:
       CONTAINER_ROLE: web
-      AUTO_MIGRATE: "true"
-      APP_NAME: "Suchak"
+      AUTO_MIGRATE: 'true'
+      APP_NAME: Suchak
       APP_ENV: production
-      APP_KEY: ${APP_KEY}
-      APP_DEBUG: "false"
-      APP_URL: ${APP_URL}
+      APP_DEBUG: 'false'
+      APP_KEY: '${APP_KEY:?APP_KEY is required}'
+      APP_URL: '${APP_URL:?APP_URL is required}'
       DB_CONNECTION: pgsql
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_DATABASE: ${DB_DATABASE:-suchak_db}
-      DB_USERNAME: ${DB_USERNAME:-postgres}
-      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DATABASE: '${DB_DATABASE:-suchak_db}'
+      DB_USERNAME: '${DB_USERNAME:-postgres}'
+      DB_PASSWORD: '${DB_PASSWORD:?DB_PASSWORD is required}'
       QUEUE_CONNECTION: redis
       CACHE_STORE: redis
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      REDIS_PASSWORD: '${REDIS_PASSWORD:?REDIS_PASSWORD is required}'
       FILESYSTEM_DISK: s3
-      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-minioadmin}
-      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
-      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-us-east-1}
-      AWS_BUCKET: ${AWS_BUCKET:-suchak-artifacts}
-      AWS_ENDPOINT: http://minio:9000
-      AWS_USE_PATH_STYLE_ENDPOINT: "true"
-      INGESTION_WORKER_URL: http://ingestion-worker:8001
-      INGESTION_WORKER_API_KEY: ${INGESTION_WORKER_API_KEY}
-      N8N_WEBHOOK_URL: ${N8N_WEBHOOK_URL}
-      N8N_WEBHOOK_SECRET: ${N8N_WEBHOOK_SECRET}
+      AWS_ACCESS_KEY_ID: '${MINIO_ROOT_USER:?MINIO_ROOT_USER is required}'
+      AWS_SECRET_ACCESS_KEY: '${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required}'
+      AWS_DEFAULT_REGION: '${AWS_DEFAULT_REGION:-us-east-1}'
+      AWS_BUCKET: '${AWS_BUCKET:-suchak-artifacts}'
+      AWS_ENDPOINT: '${AWS_ENDPOINT:?AWS_ENDPOINT is required}'
+      AWS_USE_PATH_STYLE_ENDPOINT: 'true'
+      INGESTION_WORKER_URL: 'http://ingestion-worker:8001'
+      INGESTION_WORKER_API_KEY: '${INGESTION_WORKER_API_KEY:?INGESTION_WORKER_API_KEY is required}'
+      N8N_WEBHOOK_URL: '${N8N_WEBHOOK_URL}'
+      N8N_WEBHOOK_SECRET: '${N8N_WEBHOOK_SECRET}'
     depends_on:
       postgres:
         condition: service_healthy
@@ -51,183 +52,163 @@ services:
         condition: service_healthy
       ingestion-worker:
         condition: service_healthy
-    networks:
-      - suchak-network
+    logging: &default_logging
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
-  # ============================================================================
-  # 2. Suchak Queue Worker
-  # ============================================================================
+  # ---------------------------------------------------------------------------
+# 2. Suchak Queue Worker
+  # ---------------------------------------------------------------------------
   queue-worker:
-    image: ghcr.io/jaikhlang/suchak/suchak-app:${IMAGE_TAG:-latest}
+    image: 'ghcr.io/jaikhlang/suchak/suchak-app:${IMAGE_TAG:-latest}'
     container_name: suchak_worker
     restart: always
     environment:
       CONTAINER_ROLE: worker
-      APP_NAME: "Suchak"
+      APP_NAME: Suchak
       APP_ENV: production
-      APP_KEY: ${APP_KEY}
+      APP_KEY: '${APP_KEY:?APP_KEY is required}'
       DB_CONNECTION: pgsql
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_DATABASE: ${DB_DATABASE:-suchak_db}
-      DB_USERNAME: ${DB_USERNAME:-postgres}
-      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DATABASE: '${DB_DATABASE:-suchak_db}'
+      DB_USERNAME: '${DB_USERNAME:-postgres}'
+      DB_PASSWORD: '${DB_PASSWORD:?DB_PASSWORD is required}'
       QUEUE_CONNECTION: redis
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      REDIS_PASSWORD: '${REDIS_PASSWORD:?REDIS_PASSWORD is required}'
       FILESYSTEM_DISK: s3
-      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-minioadmin}
-      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
-      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-us-east-1}
-      AWS_BUCKET: ${AWS_BUCKET:-suchak-artifacts}
-      AWS_ENDPOINT: http://minio:9000
-      AWS_USE_PATH_STYLE_ENDPOINT: "true"
-      INGESTION_WORKER_URL: http://ingestion-worker:8001
-      INGESTION_WORKER_API_KEY: ${INGESTION_WORKER_API_KEY}
+      AWS_ACCESS_KEY_ID: '${MINIO_ROOT_USER:?MINIO_ROOT_USER is required}'
+      AWS_SECRET_ACCESS_KEY: '${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required}'
+      AWS_DEFAULT_REGION: '${AWS_DEFAULT_REGION:-us-east-1}'
+      AWS_BUCKET: '${AWS_BUCKET:-suchak-artifacts}'
+      AWS_ENDPOINT: '${AWS_ENDPOINT:?AWS_ENDPOINT is required}'
+      AWS_USE_PATH_STYLE_ENDPOINT: 'true'
+      INGESTION_WORKER_URL: 'http://ingestion-worker:8001'
+      INGESTION_WORKER_API_KEY: '${INGESTION_WORKER_API_KEY:?INGESTION_WORKER_API_KEY is required}'
     depends_on:
+      postgres:
+        condition: service_healthy
       redis:
         condition: service_healthy
     healthcheck:
       disable: true
     networks:
       - suchak-network
+    logging: *default_logging
 
-  # ============================================================================
-  # 3. Suchak Task Scheduler (Cron daemon)
-  # ============================================================================
+  # ---------------------------------------------------------------------------
+ # 3. Suchak Task Scheduler (Cron daemon)
+  # ---------------------------------------------------------------------------
   scheduler:
-    image: ghcr.io/jaikhlang/suchak/suchak-app:${IMAGE_TAG:-latest}
+    image: 'ghcr.io/jaikhlang/suchak/suchak-app:${IMAGE_TAG:-latest}'
     container_name: suchak_scheduler
     restart: always
     environment:
       CONTAINER_ROLE: scheduler
-      APP_NAME: "Suchak"
+      APP_NAME: Suchak
       APP_ENV: production
-      APP_KEY: ${APP_KEY}
+      APP_KEY: '${APP_KEY:?APP_KEY is required}'
       DB_CONNECTION: pgsql
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_DATABASE: ${DB_DATABASE:-suchak_db}
-      DB_USERNAME: ${DB_USERNAME:-postgres}
-      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DATABASE: '${DB_DATABASE:-suchak_db}'
+      DB_USERNAME: '${DB_USERNAME:-postgres}'
+      DB_PASSWORD: '${DB_PASSWORD:?DB_PASSWORD is required}'
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      REDIS_PASSWORD: '${REDIS_PASSWORD:?REDIS_PASSWORD is required}'
     depends_on:
-      app:
-        condition: service_started
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     healthcheck:
       disable: true
     networks:
       - suchak-network
+    logging: *default_logging
 
-  # ============================================================================
+  # ---------------------------------------------------------------------------
   # 4. Suchak Python Ingestion & OCR Sidecar (FastAPI + Docling + PaddleOCR)
-  # ============================================================================
+  # ---------------------------------------------------------------------------
   ingestion-worker:
-    image: ghcr.io/jaikhlang/suchak/suchak-ingestion-worker:${IMAGE_TAG:-latest}
-    container_name: suchak_ingestion
+    image: 'ghcr.io/jaikhlang/suchak/suchak-ingestion-worker:${IMAGE_TAG:-latest}'
+    container_name: suchak_ingestion_worker
     restart: always
     environment:
       PORT: 8001
       WORKERS: 4
-      API_KEY: ${INGESTION_WORKER_API_KEY}
-      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-minioadmin}
-      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
-      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-us-east-1}
-      AWS_BUCKET: ${AWS_BUCKET:-suchak-artifacts}
-      AWS_ENDPOINT: http://minio:9000
-      AWS_ENDPOINT_URL: http://minio:9000
+      API_KEY: '${INGESTION_WORKER_API_KEY:?INGESTION_WORKER_API_KEY is required}'
+      AWS_ACCESS_KEY_ID: '${MINIO_ROOT_USER:?MINIO_ROOT_USER is required}'
+      AWS_SECRET_ACCESS_KEY: '${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required}'
+      AWS_DEFAULT_REGION: '${AWS_DEFAULT_REGION:-us-east-1}'
+      AWS_BUCKET: '${AWS_BUCKET:-suchak-artifacts}'
+      AWS_ENDPOINT: '${AWS_ENDPOINT:?AWS_ENDPOINT is required}'
+      AWS_ENDPOINT_URL: '${AWS_ENDPOINT:?AWS_ENDPOINT is required}'
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://localhost:8001/health || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    logging: *default_logging
     networks:
       - suchak-network
-
-  # ============================================================================
+  # ---------------------------------------------------------------------------
   # 5. Primary Database: PostgreSQL 17
-  # ============================================================================
+  # ---------------------------------------------------------------------------
   postgres:
-    image: postgres:17-alpine
+    image: 'postgres:17-alpine'
     container_name: suchak_postgres
     restart: always
     environment:
-      POSTGRES_DB: ${DB_DATABASE:-suchak_db}
-      POSTGRES_USER: ${DB_USERNAME:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: '${DB_DATABASE:-suchak_db}'
+      POSTGRES_USER: '${DB_USERNAME:-postgres}'
+      POSTGRES_PASSWORD: '${DB_PASSWORD:?DB_PASSWORD is required}'
     volumes:
-      - suchak_pgdata:/var/lib/postgresql/data
+      - 'suchak_pgdata:/var/lib/postgresql/data'
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres} -d ${DB_DATABASE:-suchak_db}" ]
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USERNAME:-postgres} -d ${DB_DATABASE:-suchak_db}']
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
       - suchak-network
+    logging: *default_logging
 
-  # ============================================================================
+  # ---------------------------------------------------------------------------
   # 6. Cache & Queues: Redis 7.4
-  # ============================================================================
+  # ---------------------------------------------------------------------------
   redis:
-    image: redis:7.4-alpine
+    image: 'redis:7.4-alpine'
     container_name: suchak_redis
     restart: always
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-supersecretredispass}
+    command:
+      - sh
+      - -c
+      - 'exec redis-server --appendonly yes --requirepass "$$REDIS_PASSWORD"'
+    environment:
+      REDIS_PASSWORD: '${REDIS_PASSWORD:?REDIS_PASSWORD is required}'
     volumes:
-      - suchak_redisdata:/data
+      - 'suchak_redisdata:/data'
     healthcheck:
-      test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-supersecretredispass}", "ping" ]
+      test: ['CMD-SHELL', 'redis-cli -a "$$REDIS_PASSWORD" ping | grep -q PONG']
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
       - suchak-network
-
-  # ============================================================================
-  # 7. Local S3 Object Store: MinIO
-  # ============================================================================
-  minio:
-    image: minio/minio:latest
-    container_name: suchak_minio
-    restart: unless-stopped
-    ports:
-      - "${MINIO_PORT:-9000}:9000"
-      - "${MINIO_CONSOLE_PORT:-9001}:9001"
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
-    command: server /data --console-address ":9001"
-    volumes:
-      - miniodata:/data
-    networks:
-      - suchak-network
-
-  # ============================================================================
-  # 8. External Automation & Broadcast: n8n
-  # ============================================================================
-  n8n:
-    image: docker.n8n.io/n8nio/n8n:latest
-    container_name: suchak_n8n
-    restart: unless-stopped
-    ports:
-      - "${N8N_PORT:-5678}:5678"
-    environment:
-      - N8N_HOST=localhost
-      - N8N_PORT=5678
-      - N8N_PROTOCOL=http
-      - NODE_ENV=production
-      - WEBHOOK_URL=http://localhost:5678/
-    volumes:
-      - n8ndata:/home/node/.n8n
-    networks:
-      - suchak-network
+    logging: *default_logging
 
 volumes:
   suchak_pgdata:
     driver: local
   suchak_redisdata:
     driver: local
-  miniodata:
-    driver: local
-  n8ndata:
-    driver: local
-
 networks:
   suchak-network:
     external: true
